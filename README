@@ -1,0 +1,183 @@
+# Zabbix to Nvoip Integration Script
+
+This repository contains a script designed to integrate **Zabbix** with **Nvoip**, enabling automated voice call notifications (torpedo de voz) from Zabbix alerts. The script is configured as a custom alert script in Zabbix and uses the Nvoip API to send voice messages to specified phone numbers.
+
+## Table of Contents
+
+1. [Overview](#overview)
+2. [Prerequisites](#prerequisites)
+3. [Installation](#installation)
+4. [Configuration](#configuration)
+5. [Usage](#usage)
+6. [Script Details](#script-details)
+7. [Troubleshooting](#troubleshooting)
+8. [Contributing](#contributing)
+9. [License](#license)
+
+---
+
+## Overview
+
+This script allows Zabbix to send voice call notifications via the **Nvoip API**. When an alert is triggered in Zabbix, the script processes the alert parameters, authenticates with the Nvoip API, and sends a voice message to the specified phone number.
+
+Key features:
+- Converts Zabbix alert parameters into a format compatible with the Nvoip API.
+- Handles errors gracefully and logs detailed information for debugging.
+- Ensures compliance with Nvoip API requirements, such as character limits and text sanitization.
+
+---
+
+## Prerequisites
+
+Before using this script, ensure you have the following:
+
+1. **Zabbix Server**:
+   - A working Zabbix server installation.
+   - Administrative access to configure custom alert scripts.
+
+2. **Nvoip Account**:
+   - An active Nvoip account with API access enabled.
+   - Obtain your `numbersip` and `user_token` from the Nvoip dashboard.
+
+3. **Dependencies**:
+   - `curl`: For making HTTP requests to the Nvoip API.
+   - `jq`: For parsing JSON responses.
+
+---
+
+## Installation
+
+1. **Clone the Repository**:
+   ```bash
+   git clone https://github.com/your-repo/zabbix-nvoip-integration.git
+   cd zabbix-nvoip-integration
+   ```
+
+2. **Install Dependencies**:
+   Ensure `curl` and `jq` are installed on your system:
+   ```bash
+   sudo apt-get update
+   sudo apt-get install curl jq
+   ```
+
+3. **Place the Script**:
+   Copy the script to the Zabbix alert scripts directory (default: `/usr/lib/zabbix/alertscripts`):
+   ```bash
+   sudo cp zabbix_nvoip_script.sh /usr/lib/zabbix/alertscripts/
+   sudo chmod +x /usr/lib/zabbix/alertscripts/zabbix_nvoip_script.sh
+   ```
+
+4. **Create Log Directory**:
+   Create a directory for logs and set appropriate permissions:
+   ```bash
+   sudo mkdir -p /var/log/zabbix/nvoip
+   sudo chown zabbix:zabbix /var/log/zabbix/nvoip
+   ```
+
+---
+
+## Configuration
+
+### 1. Update Script Variables
+Edit the script (`zabbix_nvoip_script.sh`) and replace the placeholders with your Nvoip credentials:
+```bash
+USERNAME="YOUR-NUMBERSIP"
+PASSWORD="YOUR-USER-TOKEN"
+```
+
+### 2. Configure Zabbix Media Type
+1. Go to **Administration → Media Types** in the Zabbix web interface.
+2. Click **Create media type** and configure the following:
+   - **Name**: `Nvoip Voice Call`
+   - **Type**: `Script`
+   - **Script name**: `zabbix_nvoip_script.sh`
+   - **Script parameters**:
+     - `{ALERT.SENDTO}`
+     - `{ALERT.MESSAGE}`
+
+3. Save the media type.
+
+### 3. Assign Media Type to Users
+Assign the newly created media type to the users or user groups that should receive voice call notifications.
+
+---
+
+## Usage
+
+When an alert is triggered in Zabbix, the script will:
+1. Receive the destination phone number (`{ALERT.SENDTO}`) and message (`{ALERT.MESSAGE}`).
+2. Authenticate with the Nvoip API using OAuth.
+3. Send a voice call notification to the specified phone number.
+
+Example of a Zabbix action configuration:
+- **Send to**: Phone number (e.g., `+5511999999999`)
+- **Message**: Alert message (e.g., `High CPU usage detected on server XYZ`)
+
+---
+
+## Script Details
+
+### Parameters
+The script accepts two parameters:
+1. `$1`: Destination phone number (`{ALERT.SENDTO}`).
+2. `$2`: Message to be sent (`{ALERT.MESSAGE}`).
+
+### Key Features
+- **Text Sanitization**:
+  - Removes special characters and ensures the message is plain text.
+  - Limits the message length to 160 characters.
+- **Error Handling**:
+  - Logs detailed error messages for debugging.
+  - Exits with a non-zero code if any step fails, ensuring Zabbix retries the notification.
+
+### Logging
+Logs are stored in `/var/log/zabbix/nvoip/ligacoes.log`. Each log entry includes:
+- Timestamp.
+- Input parameters.
+- API responses.
+- Success or failure status.
+
+---
+
+## Troubleshooting
+
+1. **Check Logs**:
+   Review the logs in `/var/log/zabbix/nvoip/ligacoes.log` for detailed error messages.
+
+2. **Verify Credentials**:
+   Ensure the `USERNAME` and `PASSWORD` variables in the script match your Nvoip credentials.
+
+3. **Test the Script Manually**:
+   Run the script manually to verify its functionality:
+   ```bash
+   /usr/lib/zabbix/alertscripts/zabbix_nvoip_script.sh "+5511999999999" "Test message from Zabbix"
+   ```
+
+4. **API Errors**:
+   If the Nvoip API returns errors, check the API documentation for troubleshooting steps.
+
+---
+
+## Contributing
+
+Contributions are welcome! To contribute:
+1. Fork the repository.
+2. Create a new branch for your feature or bug fix.
+3. Submit a pull request with a clear description of your changes.
+
+---
+
+## License
+
+This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.
+
+---
+
+## Acknowledgments
+
+- **Nvoip API Documentation**: Refer to the official Nvoip API documentation for more details on available endpoints and parameters.
+- **Zabbix Documentation**: For guidance on configuring custom alert scripts in Zabbix.
+
+---
+
+By integrating Zabbix with Nvoip, you can enhance your monitoring system with real-time voice call notifications, ensuring critical alerts are never missed.
